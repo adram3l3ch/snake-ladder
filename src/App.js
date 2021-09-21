@@ -4,69 +4,83 @@ import { LADDERS, SNAKES } from "./snakeAndLadder";
 let timeout;
 
 function App() {
-	const [position, setPosition] = useState({});
-	const [noOfPlayers, setNoOfPlayers] = useState(0);
+	const [position, setPosition] = useState([]);
 	const [isGameStarted, setIsGameStarted] = useState(false);
 	const [currentPlayer, setCurrentPlayer] = useState(null);
-	const [players, setPlayers] = useState({});
+	const [score, setScore] = useState([]);
+	const [winner, setWinner] = useState([]);
 
-	const setScore = diceValue => {
-		setPlayers({ ...players, [currentPlayer.id]: currentPlayer.score + diceValue });
-	};
-
-	const throwDice = () => {
-		let diceValue = Math.floor(Math.random() * 6 + 1);
-		if (isGameStarted) {
-			setScore(diceValue);
+	const createPlayers = e => {
+		e.preventDefault();
+		if (!isGameStarted) {
+			for (let i = 0; i < e.target[0].value; i++) {
+				setScore(score => [...score, 1]);
+			}
 		}
-	};
-
-	const updateCurrentPlayerScore = () => {
-		setCurrentPlayer({ ...currentPlayer, score: players[currentPlayer.id] });
+		setIsGameStarted(true);
+		setCurrentPlayer(0);
 	};
 
 	const checkForLadderAndSnake = () => {
-		console.log("ladder");
-		let a;
-		setCurrentPlayer(b => {
-			a = b;
-			return b;
-		});
-		console.log(a);
-		if (LADDERS.hasOwnProperty(currentPlayer.score)) {
-			setScore(LADDERS[currentPlayer.score] - currentPlayer.score);
-		} else if (SNAKES.hasOwnProperty(currentPlayer.score)) {
-			setScore(currentPlayer.score - SNAKES[currentPlayer.score]);
+		clearTimeout(timeout);
+		let ladderOrSnake;
+		if (LADDERS.hasOwnProperty(score[currentPlayer])) {
+			ladderOrSnake = LADDERS[score[currentPlayer]] - score[currentPlayer];
+			timeout = setTimeout(() => updateScore(ladderOrSnake), 500);
+			return true;
+		} else if (SNAKES.hasOwnProperty(score[currentPlayer])) {
+			ladderOrSnake = SNAKES[score[currentPlayer]] - score[currentPlayer];
+			timeout = setTimeout(() => updateScore(ladderOrSnake), 500);
+			return true;
+		}
+		return false;
+	};
+
+	const checkForWin = () => {
+		if (score[currentPlayer] === 100) setWinner([...winner, currentPlayer]);
+	};
+
+	useEffect(() => {
+		if (winner.length + 1 === score.length) {
+			setIsGameStarted(false);
+			document.write("game over");
+		}
+	}, [winner]);
+
+	const throwDice = () => {
+		let diceValue = Math.floor(Math.random() * 6 + 1);
+		// let diceValue = 3;
+		if (isGameStarted) {
+			updateScore(diceValue);
 		}
 	};
 
 	useEffect(() => {
-		if (isGameStarted && currentPlayer) {
-			for (let i in players) {
-				updatePosition(i);
-			}
-		}
-	}, [players, currentPlayer]);
+		setCurrentPlayer(currentPlayer => {
+			if (checkForLadderAndSnake()) return currentPlayer;
+			else return score[currentPlayer + 1] ? currentPlayer + 1 : 0;
+		});
+		score.map((item, index) => updatePosition(item, index));
+		checkForWin();
+	}, [score]);
 
-	useEffect(() => {
-		if (isGameStarted && currentPlayer) {
-			updateCurrentPlayerScore();
-		}
-	}, [players]);
+	const updateScore = _score => {
+		if (score[currentPlayer] + _score < 101) {
+			setScore([
+				...score.slice(0, currentPlayer),
+				score[currentPlayer] + _score,
+				...score.slice(currentPlayer + 1),
+			]);
+		} else setScore([...score]);
+	};
 
-	useEffect(() => {
-		if (isGameStarted && currentPlayer) {
-			console.log("asd");
-			setTimeout(checkForLadderAndSnake, 500);
-		}
-	}, [currentPlayer]);
-
-	const updatePosition = player => {
-		let { top, left } = document.querySelector(`#a_${players[player]}`).getBoundingClientRect();
-		setPosition(position => ({
-			...position,
-			[player]: { top, left },
-		}));
+	const updatePosition = (item, index) => {
+		let { top, left } = document.querySelector(`#a_${item}`).getBoundingClientRect();
+		setPosition(position => [
+			...position.slice(0, index),
+			{ top, left },
+			...position.slice(index + 1),
+		]);
 	};
 
 	const generateCells = num => {
@@ -82,39 +96,12 @@ function App() {
 		return array;
 	};
 
-	const createPlayers = e => {
-		e.preventDefault();
-		if (!isGameStarted) {
-			setNoOfPlayers(e.target[0].value);
-			for (let i = 0; i < e.target[0].value; i++) {
-				setPlayers(players => ({ ...players, [`player_${i}`]: 1 }));
-			}
-		}
-		setIsGameStarted(true);
-	};
-
-	const changePlayer = () => {
-		setCurrentPlayer(currentPlayer => {
-			let id = +currentPlayer?.id.split("_")[1] + 1;
-			let nextPlayer = players[`player_${id}`] ? `player_${id}` : `player_0`;
-			let score = players[nextPlayer];
-			return { id: nextPlayer, score };
-		});
-	};
-
-	useEffect(() => {
-		clearTimeout(timeout);
-		if (Object.keys(players).length > 0) {
-			timeout = setTimeout(changePlayer, 1000);
-		}
-	}, [players]);
-
 	return (
 		<>
 			<div className="app">
 				{generateCells(100)}
-				{Object.keys(players).map(key => (
-					<div className="coin" style={position[key]}></div>
+				{position.map(value => (
+					<div className="coin" style={value}></div>
 				))}
 			</div>
 			<form onSubmit={createPlayers}>
