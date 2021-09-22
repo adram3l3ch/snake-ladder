@@ -10,7 +10,7 @@ code {
 	font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
 }
 
-.app {
+.board {
 	flex-wrap: wrap;
 	display: flex;
 	flex-direction: column-reverse;

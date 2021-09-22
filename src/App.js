@@ -1,26 +1,29 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import Board from "./components/board/Board";
+import { setGame, setPosition } from "./features/gameSlice";
 import { LADDERS, SNAKES } from "./snakeAndLadder";
-import boardImage from "./assets/board.jpg";
 
 let timeout;
 
 function App() {
-	const [position, setPosition] = useState([]);
-	const [isGameStarted, setIsGameStarted] = useState(false);
-	const [currentPlayer, setCurrentPlayer] = useState(null);
-	const [diceValue, setDiceValue] = useState(null);
-	const [score, setScore] = useState([]);
-	const [winner, setWinner] = useState([]);
+	const { position, isGameStarted, currentPlayer, diceValue, score, winner } = useSelector(
+		state => state.game
+	);
+
+	const dispatch = useDispatch();
 
 	const createPlayers = e => {
 		e.preventDefault();
+		let _score = [];
 		if (!isGameStarted) {
 			for (let i = 0; i < e.target[0].value; i++) {
-				setScore(score => [...score, 1]);
+				_score.push(5);
 			}
 		}
-		setIsGameStarted(true);
-		setCurrentPlayer(0);
+		dispatch(setGame({ type: "score", value: _score }));
+		dispatch(setGame({ type: "isGameStarted", value: true }));
+		dispatch(setGame({ type: "currentPlayer", value: 0 }));
 	};
 
 	const checkForLadderAndSnake = () => {
@@ -40,21 +43,27 @@ function App() {
 
 	const checkForWin = () => {
 		if (score[currentPlayer] === 100 && !winner.includes(currentPlayer)) {
-			setWinner([...winner, currentPlayer]);
-			setScore([...score.slice(0, currentPlayer), ...score.slice(currentPlayer + 1)]);
+			dispatch(setGame({ type: "winner", value: [...winner, currentPlayer] }));
+			dispatch(
+				setGame({
+					type: "score",
+					value: [...score.slice(0, currentPlayer), ...score.slice(currentPlayer + 1)],
+				})
+			);
 		}
 	};
 
 	useEffect(() => {
 		if (winner.length + 1 === position.length) {
-			setIsGameStarted(false);
+			dispatch(setGame({ type: "isGameStarted", value: false }));
 			document.write("game over", winner);
 		}
 	}, [winner]);
 
 	const throwDice = () => {
 		let diceValue = Math.floor(Math.random() * 6 + 1);
-		setDiceValue(diceValue);
+		dispatch(setGame({ type: "diceValue", value: diceValue }));
+
 		// let diceValue = 3;
 		if (isGameStarted) {
 			updateScore(diceValue);
@@ -62,63 +71,55 @@ function App() {
 	};
 
 	useEffect(() => {
-		setCurrentPlayer(currentPlayer => {
-			if (checkForLadderAndSnake() || diceValue === 6) return currentPlayer;
-			else return score[currentPlayer + 1] ? currentPlayer + 1 : 0;
-		});
-		score.map((item, index) => updatePosition(item, index));
+		let player;
+		if (checkForLadderAndSnake() || diceValue === 6) {
+			player = currentPlayer;
+		} else {
+			player = score[currentPlayer + 1] ? currentPlayer + 1 : 0;
+		}
+
+		dispatch(setGame({ type: "currentPlayer", value: player }));
+		// score.map((item, index) => updatePosition(item, index));
+		updatePosition();
 		checkForWin();
 	}, [score]);
 
 	const updateScore = _score => {
-		if (score[currentPlayer] + _score < 101) {
-			setScore([
-				...score.slice(0, currentPlayer),
-				score[currentPlayer] + _score,
-				...score.slice(currentPlayer + 1),
-			]);
-		} else setScore([...score]);
-	};
-
-	const updatePosition = (item, index) => {
-		let { top, left } = document.querySelector(`#a_${item}`).getBoundingClientRect();
-		setPosition(position => [
-			...position.slice(0, index),
-			{ top, left },
-			...position.slice(index + 1),
-		]);
-	};
-
-	const generateCells = (start, end) => {
-		let array = [];
-		while (end >= start) {
-			array.push(
-				<div className="cell" id={`a_${start}`}>
-					{start}
-				</div>
+		if (score[currentPlayer] + _score < 101)
+			dispatch(
+				setGame({
+					type: "score",
+					value: [
+						...score.slice(0, currentPlayer),
+						score[currentPlayer] + _score,
+						...score.slice(currentPlayer + 1),
+					],
+				})
 			);
-			start++;
+		else
+			dispatch(
+				setGame({
+					type: "score",
+					value: [...score],
+				})
+			);
+	};
+
+	const updatePosition = () => {
+		let item = score[currentPlayer];
+		if (item) {
+			const { top, left } = document.querySelector(`#a_${item}`).getBoundingClientRect();
+			let _position = [...position];
+			_position[currentPlayer] = { top, left };
+
+			dispatch(setPosition(_position));
 		}
-		return array;
 	};
 
 	return (
 		<>
 			<div className="app">
-				<div className="row">{generateCells(1, 10)}</div>
-				<div className="row">{generateCells(11, 20)}</div>
-				<div className="row">{generateCells(21, 30)}</div>
-				<div className="row">{generateCells(31, 40)}</div>
-				<div className="row">{generateCells(41, 50)}</div>
-				<div className="row">{generateCells(51, 60)}</div>
-				<div className="row">{generateCells(61, 70)}</div>
-				<div className="row">{generateCells(71, 80)}</div>
-				<div className="row">{generateCells(81, 90)}</div>
-				<div className="row">{generateCells(91, 100)}</div>
-				{position.map(value => (
-					<div className="coin" style={value}></div>
-				))}
-				<img src={boardImage} alt="" />
+				<Board position={position} />
 			</div>
 			<form onSubmit={createPlayers}>
 				<input type="number" min="2" max="4" defaultValue="2" />
