@@ -11,11 +11,26 @@ code {
 }
 
 .app {
-	display: flex;
 	flex-wrap: wrap;
+	display: flex;
+	flex-direction: column-reverse;
 	width: 500px;
 	height: 500px;
+	position: relative;
+}
+
+.row {
+	display: flex;
+}
+.row:nth-child(even) {
 	flex-direction: row-reverse;
+}
+.app img {
+	position: absolute;
+	inset: 0;
+	max-width: 100%;
+	object-fit: contain;
+	z-index: 1;
 }
 
 .cell {
@@ -31,6 +46,7 @@ code {
 	background-color: brown;
 	transform: translate(25px, 25px) translate(-50%, -50%);
 	transition: inset 0.3s ease;
+	z-index: 5;
 }
 
 .coin:nth-child(102) {
