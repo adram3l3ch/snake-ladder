@@ -18,7 +18,7 @@ function App() {
 		let _score = [];
 		if (!isGameStarted) {
 			for (let i = 0; i < e.target[0].value; i++) {
-				_score.push(5);
+				_score.push(0);
 			}
 		}
 		dispatch(setGame({ type: "score", value: _score }));
@@ -75,7 +75,9 @@ function App() {
 		if (checkForLadderAndSnake() || diceValue === 6) {
 			player = currentPlayer;
 		} else {
-			player = score[currentPlayer + 1] ? currentPlayer + 1 : 0;
+			console.log(score[currentPlayer + 1]);
+			player = score[currentPlayer + 1] !== undefined ? currentPlayer + 1 : 0;
+			console.log(player);
 		}
 
 		dispatch(setGame({ type: "currentPlayer", value: player }));

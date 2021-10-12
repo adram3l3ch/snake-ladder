@@ -34,6 +34,7 @@ code {
 }
 
 .cell {
+	/* opacity: 0; */
 	width: 50px;
 	height: 50px;
 	outline: 1px solid black;
@@ -41,11 +42,13 @@ code {
 
 .coin {
 	position: absolute;
-	width: 20px;
-	height: 20px;
-	background-color: brown;
+	width: 30px;
+	height: 30px;
+	background-color: white;
+	border-radius: 50%;
+	box-shadow: 0 0 5px black;
 	transform: translate(25px, 25px) translate(-50%, -50%);
-	transition: inset 0.3s ease;
+	transition: inset 0.5s ease;
 	z-index: 5;
 }
 
